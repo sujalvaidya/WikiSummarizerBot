@@ -1,3 +1,4 @@
+# I just copied u/kittens_from_space's code. Here it is.
 # Hi there.
 # I wrote this code when I was learning python.
 # If you dont want to see horrible code, please click away.
