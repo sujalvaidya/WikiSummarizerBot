@@ -1,3 +1,5 @@
+#Big thanks to u/kittens_from_space for helping out by providing the code for bot detection
+
 import wikipedia
 import sentences
 import warnings
@@ -22,6 +24,15 @@ reddit = praw.Reddit(
     client_secret='',
     user_agent="",
     username=USERNAME,
+    password='',
+)
+
+#A second account
+reddit1 = praw.Reddit(
+    client_id="",
+    client_secret='',
+    user_agent="",
+    username='',
     password='',
 )
 
