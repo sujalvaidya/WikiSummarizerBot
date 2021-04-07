@@ -16,20 +16,13 @@ class logger:
 
 warnings.filterwarnings("ignore")
 wiki_links_list = []
-USERNAME = 'WikiSummarizerBot'
+USERNAME = ''
 reddit = praw.Reddit(
-    client_id="Axy12sJ50CKKFQ",
-    client_secret='yInibcPcl_6s-IcPEyghaPi-PaNrKA',
-    user_agent="realmadridbot by u/realmadridbot",
+    client_id="",
+    client_secret='',
+    user_agent="",
     username=USERNAME,
-    password='sujalyatin',
-)
-reddit1 = praw.Reddit(
-    client_id="Axy12sJ50CKKFQ",
-    client_secret='yInibcPcl_6s-IcPEyghaPi-PaNrKA',
-    user_agent="realmadridbot by u/realmadridbot",
-    username='realmadridbot',
-    password='sujalyatin',
+    password='',
 )
 
 disallowed_strings = ["List_of", "Glossary_of", "Category:", "  File:", "Wikipedia:", "Help:"]
@@ -38,8 +31,6 @@ body_disallowed_strings = ["From a modification: This is a redirect from a modif
                            "different.", "From a miscapitalisation: This is a redirect from a miscapitalisation. The "
                                          "correct form is given by the target of the redirect.", "{\displaystyle"]
 
-subreddit_banned_file = "Blacklists/subreddit_banned.txt"
-users_opted_out_file = "Blacklists/users_opted_out.txt"
 
 exclude_strings = ["Opt Out", "Opt Out Of Subreddit"]
 include = "OptIn"
@@ -50,7 +41,7 @@ footer_links = [
                                                                                                      "") + "&subject="
      + exclude_strings[0].replace(" ", "")],
     [exclude_strings[1], "https://np.reddit.com/r/SUBREDDITNAMEHERE/about/banned"],
-    ["GitHub", "https://github.com"]
+    ["GitHub", "https://github.com/Sujal-7/WikiSummarizerBot"]
 ]
 user_already_excluded = "You already seem to have opted out of the bot.\n\nTo be included again, [message me]" \
                         "(https://reddit.com/message/compose?to=WikiSummarizerBot&message=" + include + "&subject=" + \
@@ -177,7 +168,7 @@ def check_inbox():
                         message.reply(user_already_excluded)
                     else:
                         logger.log(type="INFO", message="Excluding user {}".format(author))
-                        reddit1.subreddit('WikiSummarizer').wiki['users_opted_out'].edit(users_opted_out_data +
+                        reddit.subreddit('WikiSummarizer').wiki['users_opted_out'].edit(users_opted_out_data +
                                                                                          f' {author}\n\n*')
                         users_opted_out_list = reddit.subreddit('WikiSummarizer').wiki['users_opted_out'].content_md. \
                                                    replace('\n', '').split('* ')[1:]
@@ -190,7 +181,7 @@ def check_inbox():
                     users_opted_out_data = reddit.subreddit('WikiSummarizer').wiki['users_opted_out'].content_md
                     if f' {author}\n\n*' in users_opted_out_data:
                         logger.log(type="INFO", message="Including user {}".format(author))
-                        reddit1.subreddit('WikiSummarizer').wiki['users_opted_out'].edit(users_opted_out_data.
+                        reddit.subreddit('WikiSummarizer').wiki['users_opted_out'].edit(users_opted_out_data.
                                                                                          replace(f' {author}\n\n*', ''))
                         users_opted_out_list = reddit.subreddit('WikiSummarizer').wiki['users_opted_out']. \
                                                    content_md.replace('\n', '').split('* ')[1:]
@@ -202,13 +193,13 @@ def check_inbox():
                 elif "banned" in str(message.subject).lower():
                     author = str(message.subject).split("r/")[1]
                     banned_subs_data = reddit.subreddit('WikiSummarizer').wiki['banned_subs'].content_md
-                    reddit1.subreddit('WikiSummarizer').wiki['banned_subs'].edit(banned_subs_data + f' {author}\n\n*')
+                    reddit.subreddit('WikiSummarizer').wiki['banned_subs'].edit(banned_subs_data + f' {author}\n\n*')
                     logger.log(type="INFO", message="Banned from {}".format(author))
                 elif 'you are an approved user' in str(message.subject).lower():
                     author = message.body.split('/r/')[1]
                     author = author.split(':')[0]
                     active_subs_data = reddit.subreddit('WikiSummarizer').wiki['active_subs'].content_md
-                    reddit1.subreddit('WikiSummarizer').wiki['active_subs'].edit(active_subs_data + f' {author}\n\n*')
+                    reddit.subreddit('WikiSummarizer').wiki['active_subs'].edit(active_subs_data + f' {author}\n\n*')
                     active_subs_string = str(
                         reddit.subreddit('WikiSummarizer').wiki['active_subs'].content_md.replace('\n', '').
                             split('* ')[1:])[1:-1].replace(', ', '+').replace('*', '').replace("'", '')
@@ -292,68 +283,12 @@ def main():
                     print(e)
 
 
-'''
-def main_all():
-    while True:
-        print('Refreshing...')
-        cnt = 0
-        for comment in reddit.subreddit('all').stream.comments(skip_existing=True):
-            try:
-                wiki_links_list = []
-                comment_text = str(comment.body)
-                comment_sub = str(comment.subreddit)
-                comment_mods = reddit.subreddit(comment_sub).moderator()
-                cnt += 1
-                if 'BotTerminator' not in comment_mods and 'BotDefense' not in comment_mods:
-                    if comment_sub not in get_active_subs_list():
-                        if 'https://en.m.wikipedia.org/wiki/' in comment_text or \
-                                'https://en.wikipedia.org/wiki/' in comment_text:
-                            if comment.author.name not in get_users_opted_out():
-                                bot_score = bot_detector.calc_bot_score(comment.author.name)
-                                if bot_score > 34:
-                                    logger.log(type="INFO",
-                                               message="{} seems to be a bot (score: {}) Not responding.".format
-                                               (comment.author.name, bot_score))
-                                else:
-                                    logger.log(type="INFO", message="{} has a score of {}, responding.".
-                                               format(comment.author.name, bot_score))
-                                    soup = BeautifulSoup(comment.body_html, "lxml")
-                                    links_list = []
-                                    for url in soup.findAll('a'):
-                                        links_list.append(url['href'])
-                                    for links in links_list:
-                                        if ('https://en.m.wikipedia.org/wiki/' in links) or \
-                                                ('https://en.wikipedia.org/wiki/' in links):
-                                            links = unquote(links)
-                                            if wiki_links_list.count(links) == 0:
-                                                wiki_links_list.append(links)
-                                    if 0 < len(wiki_links_list) < 4:
-                                        comment_reply = get_summary(wiki_links_list)
-                                        if comment_reply and not (comment_reply.split('.')[0] in comment_text):
-                                            try:
-                                                comment.reply(comment_body(comment_reply, comment))
-                                                logger.log(type="INFO",
-                                                           message="Responded to {} by {}".format
-                                                           ('https://www.reddit.com/' + comment.permalink,
-                                                            comment.author.name))
-                                                break
-                                            except Exception as e:
-                                                print(e)
-                if cnt > 15:
-                    break
-            except Exception as e:
-                print(e)
-'''
-
-
-def run():
+if __name__ == "__main__":
     threads = []
     main_thread = threading.Thread(target=main, args=(), name="WikiMain")
-    # main_all_thread = threading.Thread(target=main_all, args=(), name="WikiMainAll")
     downvoted_thread = threading.Thread(target=delete_downvoted, args=(), name="Delete Downvoted")
     check_inbox_thread = threading.Thread(target=check_inbox, args=(), name="Check Inbox")
     threads.append(main_thread)
-    # threads.append(main_all_thread)
     threads.append(downvoted_thread)
     threads.append(check_inbox_thread)
     for thread in threads:
